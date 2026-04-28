@@ -12,15 +12,12 @@
 </head>
 <body>
 <div id="root" x-data>
-
     <!-- Titlebar -->
     <div class="titlebar flex align-center justify-end no-select">
         <button class="new-section-btn" @click="$store.tracker.addSection()">+</button>
     </div>
-
     <!-- Sections -->
     <div class="sections-list">
-
         <!-- Empty state -->
         <div x-show="$store.tracker.sections.length === 0" class="empty-state flex column align-center">
             <p>No sections yet.</p>
@@ -29,7 +26,6 @@
 
         <template x-for="section in $store.tracker.sections" :key="section.id">
             <div class="section" x-data="{ get prog() { return $store.tracker.progress(section) } }">
-
                 <!-- Section header -->
                 <div class="section-header flex align-center">
                     <input class="section-title uppercase" x-model="section.title" @input="$store.tracker.save()" placeholder="Section name…" />
@@ -84,7 +80,6 @@
                         </div>
                     </template>
                 </div>
-
                 <button class="add-btn small" @click="$store.tracker.addTask(section)">+ Add task</button>
             </div>
         </template>

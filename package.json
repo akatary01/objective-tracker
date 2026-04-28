@@ -3,9 +3,21 @@
   "version": "1.0.0",
   "main": "electron/main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder --mac"
   },
   "devDependencies": {
-    "electron": "^28.0.0"
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.akatary.objective-tracker",
+    "productName": "Objective Tracker",
+    "directories": { "output": "dist" },
+    "files": ["electron/**", "assets/**", "index.html", "app.js"],
+    "mac": {
+      "target": "zip",
+      "category": "public.app-category.productivity"
+    }
   }
 }

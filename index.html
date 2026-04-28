@@ -14,115 +14,81 @@
 <div id="root" x-data>
 
     <!-- Titlebar -->
-    <div class="titlebar flex align-center justify-between no-select">
-        <span class="titlebar-label uppercase">Objective Tracker</span>
-        <button class="new-note-btn" @click="$store.tracker.addNote()">+ New Note</button>
+    <div class="titlebar flex align-center justify-end no-select">
+        <button class="new-section-btn" @click="$store.tracker.addSection()">+</button>
     </div>
 
-    <!-- Notes list -->
-    <div class="notes-list">
+    <!-- Sections -->
+    <div class="sections-list">
 
         <!-- Empty state -->
-        <div x-show="$store.tracker.notes.length === 0" class="empty-state flex column align-center">
-            <p>No notes yet.</p>
-            <button @click="$store.tracker.addNote()">+ Create your first note</button>
+        <div x-show="$store.tracker.sections.length === 0" class="empty-state flex column align-center">
+            <p>No sections yet.</p>
+            <button @click="$store.tracker.addSection()">+ Add your first section</button>
         </div>
 
-        <!-- Notes -->
-        <template x-for="note in $store.tracker.notes" :key="note.id">
-            <div class="note" :style="{ borderTopColor: note.color }">
+        <template x-for="section in $store.tracker.sections" :key="section.id">
+            <div class="section" x-data="{ get prog() { return $store.tracker.progress(section) } }">
 
-                <!-- Note header -->
-                <div class="note-header flex align-center">
-                    <input class="note-title" x-model="note.title" @input="$store.tracker.save()" placeholder="Note title…" />
-                    <div class="flex align-center" style="gap: 6px;">
-                        <!-- Color picker -->
-                        <div class="flex align-center" style="gap: 3px;">
-                            <template x-for="c in $store.tracker.colors" :key="c">
-                                <button
-                                    class="color-dot"
-                                    :style="{ background: c, outline: note.color === c ? '2px solid var(--font-color-primary)' : 'none', outlineOffset: '2px' }"
-                                    @click="note.color = c; $store.tracker.save()"
-                                ></button>
-                            </template>
-                        </div>
-                        <button class="icon-btn danger" @click="$store.tracker.deleteNote(note)" title="Delete note">✕</button>
-                    </div>
+                <!-- Section header -->
+                <div class="section-header flex align-center">
+                    <input class="section-title uppercase" x-model="section.title" @input="$store.tracker.save()" placeholder="Section name…" />
+                    <button class="icon-btn danger" @click="$store.tracker.deleteSection(section)" title="Delete section">✕</button>
                 </div>
 
-                <!-- Note body -->
-                <div class="note-body">
+                <!-- Progress bar -->
+                <div class="progress-wrap flex align-center">
+                    <div class="progress-track">
+                        <div class="progress-fill" :style="{ width: prog.pct + '%' }"></div>
+                    </div>
+                    <span class="progress-label" x-text="prog.total === 0 ? 'No tasks' : prog.done + ' / ' + prog.total"></span>
+                </div>
 
-                    <!-- Sections -->
-                    <template x-for="section in note.sections" :key="section.id">
-                        <div class="section" x-data="{ get prog() { return $store.tracker.progress(section) } }">
+                <!-- Tasks -->
+                <div class="task-list">
+                    <template x-for="task in section.tasks" :key="task.id">
+                        <div class="task">
 
-                            <!-- Section header -->
-                            <div class="section-header flex align-center">
-                                <input class="section-title uppercase" x-model="section.title" @input="$store.tracker.save()" placeholder="Section name…" />
-                                <button class="icon-btn danger" @click="$store.tracker.deleteSection(note, section)" title="Delete section">✕</button>
+                            <!-- Task row -->
+                            <div class="task-row flex align-center">
+                                <input type="checkbox" :checked="$store.tracker.isTaskChecked(task)" @change="$store.tracker.toggleTask(task)" />
+                                <input
+                                    class="task-text"
+                                    :class="{ checked: $store.tracker.isTaskChecked(task) }"
+                                    x-model="task.text"
+                                    @input="$store.tracker.save()"
+                                    placeholder="Task…"
+                                    @keydown.enter.prevent="$store.tracker.addSubtask(task)"
+                                />
+                                <button class="icon-btn" @click="$store.tracker.addSubtask(task)" title="Add sub-task">⤷</button>
+                                <button class="icon-btn danger" @click="$store.tracker.deleteTask(section, task)" title="Delete task">✕</button>
                             </div>
 
-                            <!-- Progress bar -->
-                            <div class="progress-wrap flex align-center">
-                                <div class="progress-track">
-                                    <div class="progress-fill" :style="{ width: prog.pct + '%' }"></div>
-                                </div>
-                                <span class="progress-label" x-text="prog.total === 0 ? 'No tasks' : prog.done + ' / ' + prog.total"></span>
-                            </div>
-
-                            <!-- Tasks -->
-                            <div class="task-list">
-                                <template x-for="task in section.tasks" :key="task.id">
-                                    <div class="task">
-
-                                        <!-- Task row -->
-                                        <div class="task-row flex align-center">
-                                            <input type="checkbox" :checked="$store.tracker.isTaskChecked(task)" @change="$store.tracker.toggleTask(task)" />
-                                            <input
-                                                class="task-text"
-                                                :class="{ checked: $store.tracker.isTaskChecked(task) }"
-                                                x-model="task.text"
-                                                @input="$store.tracker.save()"
-                                                placeholder="Task…"
-                                                @keydown.enter.prevent="$store.tracker.addSubtask(task)"
-                                            />
-                                            <button class="icon-btn" @click="$store.tracker.addSubtask(task)" title="Add sub-task">⤷</button>
-                                            <button class="icon-btn danger" @click="$store.tracker.deleteTask(section, task)" title="Delete task">✕</button>
-                                        </div>
-
-                                        <!-- Sub-tasks -->
-                                        <div class="subtask-list" x-show="task.subtasks.length > 0">
-                                            <template x-for="sub in task.subtasks" :key="sub.id">
-                                                <div class="task-row subtask-row flex align-center">
-                                                    <input type="checkbox" :checked="sub.checked" @change="$store.tracker.toggleSubtask(task, sub)" />
-                                                    <input
-                                                        class="task-text"
-                                                        :class="{ checked: sub.checked }"
-                                                        x-model="sub.text"
-                                                        @input="$store.tracker.save()"
-                                                        placeholder="Sub-task…"
-                                                    />
-                                                    <button class="icon-btn danger" @click="$store.tracker.deleteSubtask(task, sub)" title="Delete sub-task">✕</button>
-                                                </div>
-                                            </template>
-                                        </div>
-
+                            <!-- Sub-tasks -->
+                            <div class="subtask-list" x-show="task.subtasks.length > 0">
+                                <template x-for="sub in task.subtasks" :key="sub.id">
+                                    <div class="task-row subtask-row flex align-center">
+                                        <input type="checkbox" :checked="sub.checked" @change="$store.tracker.toggleSubtask(task, sub)" />
+                                        <input
+                                            class="task-text"
+                                            :class="{ checked: sub.checked }"
+                                            x-model="sub.text"
+                                            @input="$store.tracker.save()"
+                                            placeholder="Sub-task…"
+                                        />
+                                        <button class="icon-btn danger" @click="$store.tracker.deleteSubtask(task, sub)" title="Delete sub-task">✕</button>
                                     </div>
                                 </template>
                             </div>
 
-                            <button class="add-btn small" @click="$store.tracker.addTask(section)">+ Add task</button>
                         </div>
                     </template>
-
-                    <button class="add-btn" @click="$store.tracker.addSection(note)">+ Add section</button>
                 </div>
 
+                <button class="add-btn small" @click="$store.tracker.addTask(section)">+ Add task</button>
             </div>
         </template>
     </div>
-
 </div>
 </body>
 </html>

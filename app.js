@@ -1,18 +1,68 @@
-const COLORS = ['#f5c842', '#4a9eff', '#5cb85c', '#e87d7d', '#9b89c4', '#ff9f43'];
 const STORAGE_KEY = 'objective-tracker-v1';
+const BG_STORAGE_KEY = 'objective-tracker-bg-v1';
+const DEFAULT_BACKGROUND_THEME = {
+    primary: '#f0efe9',
+    secondary: '#e5e5e3',
+    plus: '#3e3e40',
+    fontPrimary: '#1c1c1e',
+    fontSecondary: '#5e5e62',
+};
+
+function applyBackgroundTheme(theme) {
+    document.documentElement.style.setProperty('--bg-primary', theme.primary);
+    document.documentElement.style.setProperty('--bg-secondary', theme.secondary);
+    document.documentElement.style.setProperty('--plus-color', theme.plus || DEFAULT_BACKGROUND_THEME.plus);
+    document.documentElement.style.setProperty('--font-color-primary', theme.fontPrimary || DEFAULT_BACKGROUND_THEME.fontPrimary);
+    document.documentElement.style.setProperty('--font-color-secondary', theme.fontSecondary || DEFAULT_BACKGROUND_THEME.fontSecondary);
+}
 
 document.addEventListener('alpine:init', () => {
     Alpine.store('tracker', {
-        notes: [],
-        colors: COLORS,
+        sections: [],
+        backgroundTheme: { ...DEFAULT_BACKGROUND_THEME },
 
         init() {
             const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) this.notes = JSON.parse(saved);
+            if (saved) this.sections = JSON.parse(saved);
+
+            const savedTheme = localStorage.getItem(BG_STORAGE_KEY);
+            if (savedTheme) {
+                try {
+                    const parsed = JSON.parse(savedTheme);
+                    if (parsed?.primary && parsed?.secondary) {
+                        this.backgroundTheme = {
+                            primary: parsed.primary,
+                            secondary: parsed.secondary,
+                            plus: parsed.plus || DEFAULT_BACKGROUND_THEME.plus,
+                            fontPrimary: parsed.fontPrimary || DEFAULT_BACKGROUND_THEME.fontPrimary,
+                            fontSecondary: parsed.fontSecondary || DEFAULT_BACKGROUND_THEME.fontSecondary,
+                        };
+                    }
+                } catch (_) {}
+            }
+
+            applyBackgroundTheme(this.backgroundTheme);
         },
 
         save() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.notes));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.sections));
+        },
+
+        saveBackgroundTheme() {
+            localStorage.setItem(BG_STORAGE_KEY, JSON.stringify(this.backgroundTheme));
+        },
+
+        setBackgroundTheme(theme) {
+            if (!theme?.primary || !theme?.secondary) return;
+            this.backgroundTheme = {
+                primary: theme.primary,
+                secondary: theme.secondary,
+                plus: theme.plus || DEFAULT_BACKGROUND_THEME.plus,
+                fontPrimary: theme.fontPrimary || DEFAULT_BACKGROUND_THEME.fontPrimary,
+                fontSecondary: theme.fontSecondary || DEFAULT_BACKGROUND_THEME.fontSecondary,
+            };
+            applyBackgroundTheme(this.backgroundTheme);
+            this.saveBackgroundTheme();
         },
 
         uid: () => crypto.randomUUID(),
@@ -38,28 +88,13 @@ document.addEventListener('alpine:init', () => {
             return task.checked;
         },
 
-        addNote() {
-            this.notes.push({
-                id: this.uid(),
-                title: 'New Note',
-                color: COLORS[0],
-                sections: [{ id: this.uid(), title: 'Section', tasks: [] }],
-            });
+        addSection() {
+            this.sections.push({ id: this.uid(), title: 'Section', tasks: [] });
             this.save();
         },
 
-        deleteNote(note) {
-            this.notes.splice(this.notes.indexOf(note), 1);
-            this.save();
-        },
-
-        addSection(note) {
-            note.sections.push({ id: this.uid(), title: 'Section', tasks: [] });
-            this.save();
-        },
-
-        deleteSection(note, section) {
-            note.sections.splice(note.sections.indexOf(section), 1);
+        deleteSection(section) {
+            this.sections.splice(this.sections.indexOf(section), 1);
             this.save();
         },
 
@@ -99,4 +134,11 @@ document.addEventListener('alpine:init', () => {
             this.save();
         },
     });
+
+    if (window.objectiveTracker?.onBackgroundThemeSelected) {
+        window.objectiveTracker.onBackgroundThemeSelected((theme) => {
+            const tracker = Alpine.store('tracker');
+            if (tracker) tracker.setBackgroundTheme(theme);
+        });
+    }
 });

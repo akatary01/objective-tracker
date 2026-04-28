@@ -23,13 +23,14 @@
     --accent: #4a9eff;
     --success: #5cb85c;
     --danger: #e87d7d;
+    --plus-color: #1c1c1e;
 
-    --radius-lg: 10px;
-    --radius-sm: 6px;
+    --radius-lg: 0px;
+    --radius-sm: 0px;
 
-    --font-size-xs: 11px;
-    --font-size-sm: 12px;
-    --font-size-md: 13px;
+    --font-size-xs: 10px;
+    --font-size-sm: 11px;
+    --font-size-md: 12px;
 
     --box-shadow-default: 0 1px 4px rgba(0, 0, 0, 0.08), 0 2px 12px rgba(0, 0, 0, 0.05);
 }

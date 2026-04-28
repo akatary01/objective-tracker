@@ -2,13 +2,9 @@
 
 A minimal macOS sticky-note app for tracking objectives with sections, tasks, and sub-tasks.
 
-<div style="display: flex; align-items:center; justify-content: space-around">
-  <img height="370" src="assets/paper.png" alt="Paper theme" />
-  <div style="display:flex; flex-direction: column; align-items:center; justify-content: space-between;">
-    <img height="175" src="assets/sky.png" alt="Sky theme" /><br/>
-    <img height="175" src="assets/mint.png" alt="Mint theme" />
-  </div>
-</div>
+<p style="text-align:center">
+  <img height="300" src="assets/example.png" alt="Paper theme"/>
+</p>
 
 ## Features
 

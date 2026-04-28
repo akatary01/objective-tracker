@@ -1,4 +1,4 @@
-/* ── Layout ─────────────────────────────────────── */
+/* ── layout ─────────────────────────────────────── */
 #root { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
 .titlebar {
@@ -57,7 +57,7 @@
 }
 .empty-state button:hover { border-color: var(--accent); color: var(--accent); }
 
-/* ── Section ─────────────────────────────────────── */
+/* ── section ─────────────────────────────────────── */
 .section {
     display: flex;
     flex-direction: column;
@@ -73,7 +73,7 @@
     flex: 1;
     border: none;
     outline: none;
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-md);
     font-weight: 700;
     letter-spacing: 0.06em;
     color: var(--font-color-secondary);
@@ -81,7 +81,7 @@
 }
 .section-title::placeholder { color: #ccc; }
 
-/* ── Progress Bar ────────────────────────────────── */
+/* ── progress Bar ────────────────────────────────── */
 .progress-wrap { gap: 8px; }
 
 .progress-track {
@@ -104,13 +104,13 @@
     text-align: right;
 }
 
-/* ── Tasks ───────────────────────────────────────── */
-.task-list { display: flex; flex-direction: column; gap: 2px; }
+/* ── tasks ───────────────────────────────────────── */
+.task-list { display: flex; flex-direction: column; gap: 2px; list-style: none; margin: 0; padding: 0; }
 .task { display: flex; flex-direction: column; gap: 2px; }
 
 .task-row { gap: 6px; padding: 2px 0; }
 
-.subtask-list { padding-left: 20px; display: flex; flex-direction: column; gap: 2px; }
+.subtask-list { padding-left: 20px; display: flex; flex-direction: column; gap: 2px; list-style: none; margin: 0; }
 
 .subtask-row { opacity: 0.85; }
 
@@ -134,7 +134,7 @@ input[type='checkbox'] {
 .task-text::placeholder { color: var(--font-color-secondary); opacity: 0.6; }
 .task-text.checked { text-decoration: line-through; color: var(--font-color-secondary); }
 
-/* ── Buttons ─────────────────────────────────────── */
+/* ── buttons ─────────────────────────────────────── */
 .icon-btn {
     border: none;
     background: transparent;

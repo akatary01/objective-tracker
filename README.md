@@ -2,7 +2,7 @@
 
 A minimal macOS sticky-note app for tracking objectives with sections, tasks, and sub-tasks.
 
-<p style="text-align:center">
+<p align="center">
   <img height="300" src="assets/example.png" alt="Paper theme"/>
 </p>
 

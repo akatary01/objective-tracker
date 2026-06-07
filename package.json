@@ -4,7 +4,8 @@
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --mac"
+    "build": "electron-builder --mac",
+    "build:win": "electron-builder --win zip"
   },
   "devDependencies": {
     "electron": "^28.0.0",
@@ -18,6 +19,10 @@
     "mac": {
       "target": "zip",
       "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": "zip",
+      "signAndEditExecutable": false
     }
   }
 }

@@ -110,6 +110,21 @@
 
 .task-row { gap: 6px; padding: 2px 0; }
 
+.drag-handle {
+    background: transparent;
+    border: none;
+    color: var(--font-color-secondary);
+    cursor: grab;
+    font-size: 12px;
+    line-height: 1;
+    opacity: 0.7;
+    padding: 0 2px;
+    flex-shrink: 0;
+}
+.drag-handle:active { cursor: grabbing; }
+.task-row:hover .drag-handle { opacity: 1; }
+.task.dragging, .subtask-row.dragging { opacity: 0.6; }
+
 .subtask-list { padding-left: 20px; display: flex; flex-direction: column; gap: 2px; list-style: none; margin: 0; }
 
 .subtask-row { opacity: 0.85; }

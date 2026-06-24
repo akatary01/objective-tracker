@@ -20,6 +20,7 @@ document.addEventListener('alpine:init', () => {
     Alpine.store('tracker', {
         sections: [],
         backgroundTheme: { ...DEFAULT_BACKGROUND_THEME },
+        dragState: null,
 
         init() {
             const saved = localStorage.getItem(STORAGE_KEY);
@@ -50,6 +51,50 @@ document.addEventListener('alpine:init', () => {
 
         saveBackgroundTheme() {
             localStorage.setItem(BG_STORAGE_KEY, JSON.stringify(this.backgroundTheme));
+        },
+
+        clearDrag() {
+            this.dragState = null;
+        },
+
+        isDragging(item) {
+            return this.dragState?.item?.id === item?.id;
+        },
+
+        startDrag(item, list, type) {
+            this.dragState = { item, list, type };
+        },
+
+        moveTask(section, targetTask) {
+            if (!this.dragState || this.dragState.type !== 'task') return;
+            const list = section.tasks;
+            const draggedTask = this.dragState.item;
+            const fromIndex = list.indexOf(draggedTask);
+            const toIndex = list.indexOf(targetTask);
+            if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
+                this.dragState = null;
+                return;
+            }
+            list.splice(fromIndex, 1);
+            list.splice(toIndex, 0, draggedTask);
+            this.dragState = null;
+            this.save();
+        },
+
+        moveSubtask(task, targetSubtask) {
+            if (!this.dragState || this.dragState.type !== 'subtask') return;
+            const list = task.subtasks;
+            const draggedSubtask = this.dragState.item;
+            const fromIndex = list.indexOf(draggedSubtask);
+            const toIndex = list.indexOf(targetSubtask);
+            if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
+                this.dragState = null;
+                return;
+            }
+            list.splice(fromIndex, 1);
+            list.splice(toIndex, 0, draggedSubtask);
+            this.dragState = null;
+            this.save();
         },
 
         setBackgroundTheme(theme) {

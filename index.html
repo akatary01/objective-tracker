@@ -43,10 +43,19 @@
                 <!-- tasks -->
                 <ul class="task-list">
                     <template x-for="task in section.tasks" :key="task.id">
-                        <li class="task">
+                        <li
+                            class="task"
+                            draggable="true"
+                            :class="{ dragging: $store.tracker.isDragging(task) }"
+                            @dragstart.stop="$store.tracker.startDrag(task, section.tasks, 'task')"
+                            @dragend.stop="$store.tracker.clearDrag()"
+                            @dragover.prevent.stop
+                            @drop.prevent.stop="$store.tracker.moveTask(section, task)"
+                        >
 
                             <!-- task row -->
                             <div class="task-row flex align-center">
+                                <button class="drag-handle" type="button" title="Drag to reorder" aria-label="Drag to reorder">⋮⋮</button>
                                 <input type="checkbox" :checked="$store.tracker.isTaskChecked(task)" @change="$store.tracker.toggleTask(task)" />
                                 <input
                                     class="task-text"
@@ -63,7 +72,16 @@
                             <!-- sub-tasks -->
                             <ul class="subtask-list" x-show="task.subtasks.length > 0">
                                 <template x-for="sub in task.subtasks" :key="sub.id">
-                                    <li class="task-row subtask-row flex align-center">
+                                    <li
+                                        class="task-row subtask-row flex align-center"
+                                        draggable="true"
+                                        :class="{ dragging: $store.tracker.isDragging(sub) }"
+                                        @dragstart.stop="$store.tracker.startDrag(sub, task.subtasks, 'subtask')"
+                                        @dragend.stop="$store.tracker.clearDrag()"
+                                        @dragover.prevent.stop
+                                        @drop.prevent.stop="$store.tracker.moveSubtask(task, sub)"
+                                    >
+                                        <button class="drag-handle" type="button" title="Drag to reorder" aria-label="Drag to reorder">⋮⋮</button>
                                         <input type="checkbox" :checked="sub.checked" @change="$store.tracker.toggleSubtask(task, sub)" />
                                         <input
                                             class="task-text"

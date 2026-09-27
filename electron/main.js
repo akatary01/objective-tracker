@@ -1,5 +1,7 @@
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain } = require('electron');
 const path = require('path');
+
+let currentThemeIndex = 0;
 
 const BACKGROUND_THEMES = [
   { label: 'Paper', primary: '#f0efe9', secondary: '#e5e5e3', plus: '#3e3e40', fontPrimary: '#1c1c1e', fontSecondary: '#5e5e62' },
@@ -16,11 +18,23 @@ function applyBackgroundTheme(win, theme) {
   win.webContents.send('background-theme-selected', theme);
 }
 
+function cycleTheme(win) {
+  currentThemeIndex = (currentThemeIndex + 1) % BACKGROUND_THEMES.length;
+  const theme = BACKGROUND_THEMES[currentThemeIndex];
+  applyBackgroundTheme(win, theme);
+  return theme;
+}
+
 function createWindow() {
+  const isWindows = process.platform === 'win32';
+  const isMac = process.platform === 'darwin';
+
   const win = new BrowserWindow({
     width: 320,
     height: 600,
-    titleBarStyle: 'customButtonsOnHover',
+    frame: false,
+    titleBarStyle: isMac ? 'hiddenInset' : 'hidden',
+    trafficLightPosition: isMac ? { x: 16, y: 14 } : undefined,
     roundedCorners: false,
     resizable: true,
     minWidth: 240,
@@ -33,41 +47,41 @@ function createWindow() {
     },
   });
 
+  if (isMac) {
+    win.setWindowButtonVisibility(false);
+  }
+
+  Menu.setApplicationMenu(null);
+  win.setAutoHideMenuBar(true);
+  win.setMenuBarVisibility(false);
+
   win.loadFile(path.join(__dirname, '../index.html'));
 
-  // Minimal menu
-  Menu.setApplicationMenu(Menu.buildFromTemplate([
-    {
-      label: 'App',
-      submenu: [
-        { role: 'hide' },
-        { type: 'separator' },
-        { role: 'quit' },
-      ],
-    },
-    {
-      label: 'Edit',
-      submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
-        { type: 'separator' },
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' },
-        { role: 'selectAll' },
-      ],
-    },
-    {
-      label: 'Color',
-      submenu: BACKGROUND_THEMES.map((theme, index) => ({
-        label: `■ ${theme.label}`,
-        type: 'radio',
-        checked: index === 0,
-        click: () => applyBackgroundTheme(win, theme),
-      })),
-    },
-  ]));
+  currentThemeIndex = 0;
+  applyBackgroundTheme(win, BACKGROUND_THEMES[currentThemeIndex]);
 }
+
+ipcMain.handle('window:minimize', () => {
+  const win = BrowserWindow.getFocusedWindow();
+  if (win && !win.isDestroyed()) win.minimize();
+});
+
+ipcMain.handle('window:toggle-fullscreen', () => {
+  const win = BrowserWindow.getFocusedWindow();
+  if (!win || win.isDestroyed()) return;
+  win.setFullScreen(!win.isFullScreen());
+});
+
+ipcMain.handle('theme:cycle', () => {
+  const win = BrowserWindow.getFocusedWindow();
+  if (!win || win.isDestroyed()) return BACKGROUND_THEMES[currentThemeIndex];
+  return cycleTheme(win);
+});
+
+ipcMain.handle('window:close', () => {
+  const win = BrowserWindow.getFocusedWindow();
+  if (win && !win.isDestroyed()) win.close();
+});
 
 app.whenReady().then(createWindow);
 

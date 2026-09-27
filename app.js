@@ -8,15 +8,99 @@ const DEFAULT_BACKGROUND_THEME = {
     fontSecondary: '#5e5e62',
 };
 
+function hexToRgba(hex, alpha = 1) {
+    const clean = (hex || '#808080').replace('#', '');
+    const full = clean.length === 3 ? clean.split('').map((part) => part + part).join('') : clean;
+    const value = Number.parseInt(full, 16);
+    const r = (value >> 16) & 255;
+    const g = (value >> 8) & 255;
+    const b = value & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function getThemeScheme(theme) {
+    const base = theme.primary || DEFAULT_BACKGROUND_THEME.primary;
+    const normalized = base.replace('#', '');
+    const full = normalized.length === 3 ? normalized.split('').map((char) => char + char).join('') : normalized;
+    const value = Number.parseInt(full, 16);
+    const r = (value >> 16) & 255;
+    const g = (value >> 8) & 255;
+    const b = value & 255;
+    return (r * 0.299 + g * 0.587 + b * 0.114) > 160 ? 'light' : 'dark';
+}
+
 function applyBackgroundTheme(theme) {
     document.documentElement.style.setProperty('--bg-primary', theme.primary);
     document.documentElement.style.setProperty('--bg-secondary', theme.secondary);
     document.documentElement.style.setProperty('--plus-color', theme.plus || DEFAULT_BACKGROUND_THEME.plus);
     document.documentElement.style.setProperty('--font-color-primary', theme.fontPrimary || DEFAULT_BACKGROUND_THEME.fontPrimary);
     document.documentElement.style.setProperty('--font-color-secondary', theme.fontSecondary || DEFAULT_BACKGROUND_THEME.fontSecondary);
+    document.documentElement.style.setProperty('--scrollbar-thumb', hexToRgba(theme.secondary || DEFAULT_BACKGROUND_THEME.secondary, 0.45));
+    document.documentElement.style.setProperty('--scrollbar-thumb-hover', hexToRgba(theme.secondary || DEFAULT_BACKGROUND_THEME.secondary, 0.7));
+    document.documentElement.style.setProperty('--deadline-bg', hexToRgba(theme.primary || DEFAULT_BACKGROUND_THEME.primary, 0.26));
+    document.documentElement.style.setProperty('--deadline-border', hexToRgba(theme.fontSecondary || DEFAULT_BACKGROUND_THEME.fontSecondary, 0.35));
+    document.documentElement.style.colorScheme = getThemeScheme(theme);
+}
+
+function showTooltipForElement(element, text) {
+    if (!element || !text) return;
+    const tooltip = document.getElementById('app-hover-tooltip');
+    if (!tooltip) return;
+    tooltip.textContent = text;
+    tooltip.classList.add('visible');
+
+    const rect = element.getBoundingClientRect();
+    const margin = 12;
+    const tooltipWidth = Math.min(tooltip.offsetWidth || 140, window.innerWidth - margin * 2);
+    const tooltipHeight = tooltip.offsetHeight || 24;
+    const centerX = rect.left + rect.width / 2;
+    const minLeft = margin + tooltipWidth / 2;
+    const maxLeft = window.innerWidth - margin - tooltipWidth / 2;
+    const clampedLeft = Math.min(Math.max(centerX, minLeft), maxLeft);
+    const preferredTop = rect.bottom + 8;
+    const canFitBelow = preferredTop + tooltipHeight + margin <= window.innerHeight;
+    const finalTop = canFitBelow ? preferredTop : Math.max(margin, rect.top - tooltipHeight - 8);
+
+    tooltip.style.left = `${clampedLeft}px`;
+    tooltip.style.top = `${finalTop}px`;
+}
+
+function hideTooltipForElement() {
+    const tooltip = document.getElementById('app-hover-tooltip');
+    if (!tooltip) return;
+    tooltip.classList.remove('visible');
+}
+
+function bindThemeHoverTooltips() {
+    document.addEventListener('mouseover', (event) => {
+        const element = event.target.closest('[title]');
+        if (!element) return;
+        const text = element.getAttribute('title');
+        if (!text) return;
+        element.dataset.tooltip = text;
+        element.removeAttribute('title');
+        showTooltipForElement(element, text);
+    });
+
+    document.addEventListener('mousemove', (event) => {
+        const element = event.target.closest('[data-tooltip]');
+        if (!element) return;
+        const text = element.dataset.tooltip;
+        if (!text) return;
+        showTooltipForElement(element, text);
+    });
+
+    document.addEventListener('mouseout', (event) => {
+        const element = event.target.closest('[data-tooltip]');
+        if (!element) return;
+        const next = event.relatedTarget;
+        if (next && element.contains(next)) return;
+        hideTooltipForElement();
+    });
 }
 
 document.addEventListener('alpine:init', () => {
+    bindThemeHoverTooltips();
     Alpine.store('tracker', {
         sections: [],
         backgroundTheme: { ...DEFAULT_BACKGROUND_THEME },
@@ -24,7 +108,27 @@ document.addEventListener('alpine:init', () => {
 
         init() {
             const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) this.sections = JSON.parse(saved);
+            if (saved) {
+                this.sections = JSON.parse(saved);
+                this.sections.forEach((section) => {
+                    if (!section.tasks) return;
+                    section.tasks.forEach((task) => {
+                        if (task.deadline && !task.deadlineDate && !task.deadlineTime) {
+                            const [datePart, timePart] = String(task.deadline).split('T');
+                            task.deadlineDate = datePart || '';
+                            task.deadlineTime = timePart || '';
+                        }
+                        task.deadlineDate = task.deadlineDate || '';
+                        task.deadlineTime = task.deadlineTime || '';
+                        task.deadlineMonth = task.deadlineDate ? String(new Date(`${task.deadlineDate}T00:00`).getMonth() + 1) : '';
+                        task.deadlineDay = task.deadlineDate ? String(new Date(`${task.deadlineDate}T00:00`).getDate()) : '';
+                        task.deadlineYear = task.deadlineDate ? String(new Date(`${task.deadlineDate}T00:00`).getFullYear()) : '';
+                        task.deadlineHour = task.deadlineTime ? String(Math.floor(Number(task.deadlineTime.split(':')[0]) || 0)) : '';
+                        task.deadlineMinute = task.deadlineTime ? String((Number(task.deadlineTime.split(':')[1]) || 0)) : '';
+                        task.deadlineEditorOpen = false;
+                    });
+                });
+            }
 
             const savedTheme = localStorage.getItem(BG_STORAGE_KEY);
             if (savedTheme) {
@@ -45,12 +149,90 @@ document.addEventListener('alpine:init', () => {
             applyBackgroundTheme(this.backgroundTheme);
         },
 
+        formatDeadline(task) {
+            if (!task?.deadlineDate && !task?.deadlineTime) return '▾ No deadline';
+
+            const dateValue = task.deadlineDate ? new Date(`${task.deadlineDate}T${task.deadlineTime || '00:00'}`) : null;
+            const dateText = dateValue ? dateValue.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+            const timeText = task.deadlineTime ? new Date(`2000-01-01T${task.deadlineTime}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+
+            if (dateText && timeText) return `${dateText} • ${timeText}`;
+            if (dateText) return dateText;
+            return timeText;
+        },
+
+        toggleDeadlineEditor(task) {
+            if (!task) return;
+            task.deadlineEditorOpen = !task.deadlineEditorOpen;
+        },
+
+        saveDeadline(task) {
+            const year = String(task.deadlineYear || '').trim();
+            const month = String(task.deadlineMonth || '').trim();
+            const day = String(task.deadlineDay || '').trim();
+            const hour = String(task.deadlineHour || '').trim();
+            const minute = String(task.deadlineMinute || '').trim();
+
+            if (!year || !month || !day) {
+                task.deadlineDate = '';
+                task.deadlineTime = '';
+                task.deadlineMonth = '';
+                task.deadlineDay = '';
+                task.deadlineYear = '';
+                task.deadlineHour = '';
+                task.deadlineMinute = '';
+                task.deadlineEditorOpen = false;
+                this.save();
+                return;
+            }
+
+            const paddedMonth = String(month).padStart(2, '0');
+            const paddedDay = String(day).padStart(2, '0');
+            const paddedHour = hour ? String(hour).padStart(2, '0') : '00';
+            const paddedMinute = minute ? String(minute).padStart(2, '0') : '00';
+
+            task.deadlineDate = `${year}-${paddedMonth}-${paddedDay}`;
+            task.deadlineTime = `${paddedHour}:${paddedMinute}`;
+            task.deadlineEditorOpen = false;
+            this.save();
+        },
+
+        clearDeadline(task) {
+            if (!task) return;
+            task.deadlineDate = '';
+            task.deadlineTime = '';
+            task.deadlineMonth = '';
+            task.deadlineDay = '';
+            task.deadlineYear = '';
+            task.deadlineHour = '';
+            task.deadlineMinute = '';
+            task.deadlineEditorOpen = false;
+            this.save();
+        },
+
         save() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(this.sections));
         },
 
         saveBackgroundTheme() {
             localStorage.setItem(BG_STORAGE_KEY, JSON.stringify(this.backgroundTheme));
+        },
+
+        showTooltip(text, event) {
+            if (!text) return;
+            const tooltip = document.getElementById('app-hover-tooltip');
+            if (!tooltip) return;
+            tooltip.textContent = text;
+            tooltip.classList.add('visible');
+            const rect = event.currentTarget.getBoundingClientRect();
+            tooltip.style.left = `${rect.left + rect.width / 2}px`;
+            tooltip.style.top = `${rect.top - 10}px`;
+        },
+
+        hideTooltip() {
+            const tooltip = document.getElementById('app-hover-tooltip');
+            if (!tooltip) return;
+            tooltip.classList.remove('visible');
         },
 
         clearDrag() {
@@ -144,7 +326,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         addTask(section) {
-            section.tasks.push({ id: this.uid(), text: '', checked: false, subtasks: [] });
+            section.tasks.push({ id: this.uid(), text: '', checked: false, deadlineDate: '', deadlineTime: '', deadlineMonth: '', deadlineDay: '', deadlineYear: '', deadlineHour: '', deadlineMinute: '', deadlineEditorOpen: false, subtasks: [] });
             this.save();
         },
 

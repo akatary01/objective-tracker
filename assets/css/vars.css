@@ -24,6 +24,8 @@
     --success: #5cb85c;
     --danger: #e87d7d;
     --plus-color: #1c1c1e;
+    --scrollbar-thumb: rgba(120, 120, 140, 0.35);
+    --scrollbar-thumb-hover: rgba(120, 120, 140, 0.5);
 
     --radius-lg: 0px;
     --radius-sm: 0px;

@@ -13,8 +13,21 @@
 <body>
 <div id="root" x-data>
     <!-- Titlebar -->
-    <nav class="titlebar flex align-center justify-end no-select">
-        <button class="new-section-btn" @click="$store.tracker.addSection()">+</button>
+    <nav class="titlebar flex align-center justify-between no-select">
+        <div class="titlebar-actions action-bar">
+            <button class="new-section-btn" @click="$store.tracker.addSection()" title="Add section">+</button>
+            <button class="theme-btn" @click="window.objectiveTracker?.cycleTheme?.()" title="Change color theme">🎨</button>
+        </div>
+
+        <div class="titlebar-center" aria-hidden="true">
+            <span class="titlebar-label">OBJECTIVE TRACKER</span>
+        </div>
+
+        <div class="window-controls" aria-label="Window controls">
+            <button class="window-control minimize" @click="window.objectiveTracker?.minimizeWindow?.()">—</button>
+            <button class="window-control fullscreen" @click="window.objectiveTracker?.toggleFullScreen?.()">⛶</button>
+            <button class="window-control close" @click="window.objectiveTracker?.closeWindow?.()">✕</button>
+        </div>
     </nav>
     <!-- sections -->
     <div class="sections-list">
@@ -63,10 +76,126 @@
                                     x-model="task.text"
                                     @input="$store.tracker.save()"
                                     :class="{ checked: $store.tracker.isTaskChecked(task) }"
+                                    :title="task.text || 'Task…'"
                                     @keydown.enter.prevent="$store.tracker.addSubtask(task)"
                                 />
+                                <div class="task-deadline-wrap" title="Set deadline">
+                                    <button
+                                        type="button"
+                                        class="task-deadline-trigger"
+                                        @click="$store.tracker.toggleDeadlineEditor(task)"
+                                        x-text="$store.tracker.formatDeadline(task)"
+                                    >No deadline</button>
+
+                                    <div
+                                        class="task-deadline-popover"
+                                        x-show="task.deadlineEditorOpen"
+                                        x-cloak
+                                        @click.outside="task.deadlineEditorOpen = false"
+                                    >
+                                        <div class="task-deadline-grid">
+                                            <select class="task-deadline-field" x-model="task.deadlineMonth" aria-label="Deadline month">
+                                                <option value="">Month</option>
+                                                <option value="1">Jan</option>
+                                                <option value="2">Feb</option>
+                                                <option value="3">Mar</option>
+                                                <option value="4">Apr</option>
+                                                <option value="5">May</option>
+                                                <option value="6">Jun</option>
+                                                <option value="7">Jul</option>
+                                                <option value="8">Aug</option>
+                                                <option value="9">Sep</option>
+                                                <option value="10">Oct</option>
+                                                <option value="11">Nov</option>
+                                                <option value="12">Dec</option>
+                                            </select>
+                                            <select class="task-deadline-field" x-model="task.deadlineDay" aria-label="Deadline day">
+                                                <option value="">Day</option>
+                                                <option value="1">1</option>
+                                                <option value="2">2</option>
+                                                <option value="3">3</option>
+                                                <option value="4">4</option>
+                                                <option value="5">5</option>
+                                                <option value="6">6</option>
+                                                <option value="7">7</option>
+                                                <option value="8">8</option>
+                                                <option value="9">9</option>
+                                                <option value="10">10</option>
+                                                <option value="11">11</option>
+                                                <option value="12">12</option>
+                                                <option value="13">13</option>
+                                                <option value="14">14</option>
+                                                <option value="15">15</option>
+                                                <option value="16">16</option>
+                                                <option value="17">17</option>
+                                                <option value="18">18</option>
+                                                <option value="19">19</option>
+                                                <option value="20">20</option>
+                                                <option value="21">21</option>
+                                                <option value="22">22</option>
+                                                <option value="23">23</option>
+                                                <option value="24">24</option>
+                                                <option value="25">25</option>
+                                                <option value="26">26</option>
+                                                <option value="27">27</option>
+                                                <option value="28">28</option>
+                                                <option value="29">29</option>
+                                                <option value="30">30</option>
+                                                <option value="31">31</option>
+                                            </select>
+                                            <select class="task-deadline-field" x-model="task.deadlineYear" aria-label="Deadline year">
+                                                <option value="">Year</option>
+                                                <option value="2026">2026</option>
+                                                <option value="2027">2027</option>
+                                                <option value="2028">2028</option>
+                                                <option value="2029">2029</option>
+                                                <option value="2030">2030</option>
+                                            </select>
+                                        </div>
+                                        <div class="task-deadline-grid task-deadline-grid-time">
+                                            <select class="task-deadline-field" x-model="task.deadlineHour" aria-label="Deadline hour">
+                                                <option value="">Hour</option>
+                                                <option value="0">00</option>
+                                                <option value="1">01</option>
+                                                <option value="2">02</option>
+                                                <option value="3">03</option>
+                                                <option value="4">04</option>
+                                                <option value="5">05</option>
+                                                <option value="6">06</option>
+                                                <option value="7">07</option>
+                                                <option value="8">08</option>
+                                                <option value="9">09</option>
+                                                <option value="10">10</option>
+                                                <option value="11">11</option>
+                                                <option value="12">12</option>
+                                                <option value="13">13</option>
+                                                <option value="14">14</option>
+                                                <option value="15">15</option>
+                                                <option value="16">16</option>
+                                                <option value="17">17</option>
+                                                <option value="18">18</option>
+                                                <option value="19">19</option>
+                                                <option value="20">20</option>
+                                                <option value="21">21</option>
+                                                <option value="22">22</option>
+                                                <option value="23">23</option>
+                                            </select>
+                                            <select class="task-deadline-field" x-model="task.deadlineMinute" aria-label="Deadline minute">
+                                                <option value="">Min</option>
+                                                <option value="0">00</option>
+                                                <option value="15">15</option>
+                                                <option value="30">30</option>
+                                                <option value="45">45</option>
+                                            </select>
+                                        </div>
+                                        <div class="task-deadline-actions">
+                                            <button type="button" class="task-deadline-clear" @click="$store.tracker.clearDeadline(task)">Clear</button>
+                                            <button type="button" class="task-deadline-save" @click="$store.tracker.saveDeadline(task)">Save</button>
+                                        </div>
+                                    </div>
+                                </div>
                                 <button class="icon-btn" @click="$store.tracker.addSubtask(task)" title="Add sub-task">⤷</button>
-                                <button class="icon-btn danger" @click="$store.tracker.deleteTask(section, task)" title="Delete task">✕</button>
+                                <button class="icon-btn danger" @click="$store.tracker.deleteTask(section, task)">✕</button>
                             </div>
 
                             <!-- sub-tasks -->
@@ -89,8 +218,9 @@
                                             placeholder="Sub-task…"
                                             @input="$store.tracker.save()"
                                             :class="{ checked: sub.checked }"
+                                            :title="sub.text || 'Sub-task…'"
                                         />
-                                        <button class="icon-btn danger" @click="$store.tracker.deleteSubtask(task, sub)" title="Delete sub-task">✕</button>
+                                        <button class="icon-btn danger" @click="$store.tracker.deleteSubtask(task, sub)">✕</button>
                                     </li>
                                 </template>
                             </ul>
@@ -101,6 +231,7 @@
             </section>
         </template>
     </div>
+    <div id="app-hover-tooltip" aria-hidden="true"></div>
 </div>
 </body>
 </html>

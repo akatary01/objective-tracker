@@ -33,6 +33,7 @@ function applyBackgroundTheme(theme) {
     document.documentElement.style.setProperty('--bg-primary', theme.primary);
     document.documentElement.style.setProperty('--bg-secondary', theme.secondary);
     document.documentElement.style.setProperty('--plus-color', theme.plus || DEFAULT_BACKGROUND_THEME.plus);
+    document.documentElement.style.setProperty('--task-accent', theme.plus || DEFAULT_BACKGROUND_THEME.plus);
     document.documentElement.style.setProperty('--font-color-primary', theme.fontPrimary || DEFAULT_BACKGROUND_THEME.fontPrimary);
     document.documentElement.style.setProperty('--font-color-secondary', theme.fontSecondary || DEFAULT_BACKGROUND_THEME.fontSecondary);
     document.documentElement.style.setProperty('--scrollbar-thumb', hexToRgba(theme.secondary || DEFAULT_BACKGROUND_THEME.secondary, 0.45));
@@ -72,8 +73,10 @@ function hideTooltipForElement() {
 }
 
 function bindThemeHoverTooltips() {
+    const tooltipSelectors = '.new-section-btn, .theme-btn, .task-text, .subtask-text';
+
     document.addEventListener('mouseover', (event) => {
-        const element = event.target.closest('[title]');
+        const element = event.target.closest(tooltipSelectors);
         if (!element) return;
         const text = element.getAttribute('title');
         if (!text) return;
@@ -152,13 +155,13 @@ document.addEventListener('alpine:init', () => {
         formatDeadline(task) {
             if (!task?.deadlineDate && !task?.deadlineTime) return '▾ No deadline';
 
-            const dateValue = task.deadlineDate ? new Date(`${task.deadlineDate}T${task.deadlineTime || '00:00'}`) : null;
-            const dateText = dateValue ? dateValue.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-            const timeText = task.deadlineTime ? new Date(`2000-01-01T${task.deadlineTime}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+            const dateText = task.deadlineDate ? new Date(`${task.deadlineDate}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+            const timeText = task.deadlineTime ? new Date(`2000-01-01T${task.deadlineTime}:00`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
 
             if (dateText && timeText) return `${dateText} • ${timeText}`;
             if (dateText) return dateText;
-            return timeText;
+            if (timeText) return timeText;
+            return '▾ No deadline';
         },
 
         toggleDeadlineEditor(task) {
@@ -173,7 +176,10 @@ document.addEventListener('alpine:init', () => {
             const hour = String(task.deadlineHour || '').trim();
             const minute = String(task.deadlineMinute || '').trim();
 
-            if (!year || !month || !day) {
+            const hasDate = Boolean(year && month && day);
+            const hasTime = Boolean(hour && minute);
+
+            if (!hasDate && !hasTime) {
                 task.deadlineDate = '';
                 task.deadlineTime = '';
                 task.deadlineMonth = '';
@@ -186,13 +192,8 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
-            const paddedMonth = String(month).padStart(2, '0');
-            const paddedDay = String(day).padStart(2, '0');
-            const paddedHour = hour ? String(hour).padStart(2, '0') : '00';
-            const paddedMinute = minute ? String(minute).padStart(2, '0') : '00';
-
-            task.deadlineDate = `${year}-${paddedMonth}-${paddedDay}`;
-            task.deadlineTime = `${paddedHour}:${paddedMinute}`;
+            task.deadlineDate = hasDate ? `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}` : '';
+            task.deadlineTime = hasTime ? `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}` : '';
             task.deadlineEditorOpen = false;
             this.save();
         },

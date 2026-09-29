@@ -1,28 +1,25 @@
 {
   "name": "objective-tracker",
-  "version": "1.0.0",
-  "main": "electron/main.js",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "start": "electron .",
-    "build": "electron-builder --mac",
-    "build:win": "electron-builder --win zip"
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "build:windows": "tauri build --bundles msi,nsis",
+    "build:macos": "tauri build --bundles app,dmg",
+    "preview": "vite preview --host 0.0.0.0",
+    "start": "npm run tauri -- dev",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "devDependencies": {
-    "electron": "^28.0.0",
-    "electron-builder": "^24.0.0"
+    "@tauri-apps/cli": "^2.12.0",
+    "vite": "^5.4.10"
   },
-  "build": {
-    "appId": "com.akatary.objective-tracker",
-    "productName": "Objective Tracker",
-    "directories": { "output": "dist" },
-    "files": ["electron/**", "assets/**", "index.html", "app.js"],
-    "mac": {
-      "target": "zip",
-      "category": "public.app-category.productivity"
-    },
-    "win": {
-      "target": "zip",
-      "signAndEditExecutable": false
-    }
+  "dependencies": {
+    "@tauri-apps/api": "^2.12.0",
+    "alpinejs": "^3.17.4"
   }
 }

@@ -493,35 +493,52 @@
 }
 .drag-handle:active { cursor: grabbing; }
 .task-row:hover .drag-handle { opacity: 1; }
+.drag-handle-placeholder { visibility: hidden; pointer-events: none; cursor: default; }
 
 .task.dragging, .subtask-row.dragging { opacity: 0.6; }
 .subtask-row.dragging, .subtask-row.drag-target { transition: opacity 0.12s ease, background-color 0.12s ease, outline-color 0.12s ease; }
 .subtask-row.drag-target { background: color-mix(in srgb, var(--task-accent) 8%, transparent); }
 
-.subtask-list { padding-left: 9px; display: flex; flex-direction: column; gap: 2px; list-style: none; margin: 1px 0 3px 20px; border-left: 1px solid var(--border); }
+.subtask-list { padding-left: 9px; display: flex; flex-direction: column; gap: 2px; list-style: none; margin: 1px 0 3px 20px; }
 
 .subtask-row { opacity: 0.85; }
 
 input[type='checkbox'] {
     width: 13px;
     height: 13px;
+    min-width: 13px;
+    min-height: 13px;
+    flex: 0 0 13px;
+    box-sizing: border-box;
     cursor: pointer;
     accent-color: var(--task-accent, var(--plus-color));
-    flex-shrink: 0;
+}
+
+.task-row-multiline > input[type='checkbox'] {
+    align-self: flex-start;
+    margin-top: 1px;
 }
 
 .task-text {
-    flex: 1;
+    display: block;
+    flex: 1 1 0;
+    width: 0;
     border: none;
     outline: none;
     background: transparent;
     font-size: var(--font-size-md);
+    font-family: inherit;
+    line-height: 1.35;
     color: var(--font-color-primary);
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    min-height: 1.35em;
+    max-height: 4.05em;
+    padding: 0;
+    resize: none;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
     text-align: left;
+    box-sizing: border-box;
 }
 .task-text::placeholder { color: var(--font-color-secondary); opacity: 0.6; }
 .task-text.checked { text-decoration: line-through; color: var(--font-color-secondary); }
@@ -534,10 +551,19 @@ input[type='checkbox'] {
     background: transparent;
     border: none;
     border-radius: 8px;
-    padding: 2px 6px;
-    flex-shrink: 0;
+    padding: 2px 3px;
+    flex: 0 0 88px;
+    width: 88px;
+    max-width: 88px;
     box-shadow: none;
-    max-width: 180px;
+}
+
+.day-task-list .task-deadline-wrap {
+    flex-basis: 60px;
+    width: 60px;
+    max-width: 60px;
+    padding-right: 1px;
+    padding-left: 1px;
 }
 
 .task-deadline-trigger {
@@ -549,7 +575,7 @@ input[type='checkbox'] {
     font-size: 10px;
     outline: none;
     width: 100%;
-    max-width: 156px;
+    max-width: 82px;
     min-width: 0;
     letter-spacing: 0.02em;
     font-family: inherit;
@@ -560,6 +586,8 @@ input[type='checkbox'] {
     text-overflow: ellipsis;
     opacity: 0.92;
 }
+
+.day-task-list .task-deadline-trigger { max-width: 56px; }
 
 .task-deadline-popover {
     position: absolute;
@@ -693,6 +721,9 @@ input[type='checkbox'] {
 .task-row:hover .icon-btn,
 .section-header:hover .icon-btn,
 .note-header .icon-btn { opacity: 1; }
+
+.task-row-minimized .collapse-btn,
+.section-header-minimized .collapse-btn { opacity: 1; }
 
 .icon-btn:hover { background: var(--bg-secondary); }
 .collapse-btn-placeholder {

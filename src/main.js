@@ -4,6 +4,22 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 
 const appWindow = isTauri() ? getCurrentWindow() : null;
 
+window.resizeTaskText = (element) => {
+  if (!element) return;
+  const style = window.getComputedStyle(element);
+  const lineHeight = Number.parseFloat(style.lineHeight) || Number.parseFloat(style.fontSize) * 1.35;
+  const maxHeight = Math.ceil(lineHeight * 3);
+  element.style.height = 'auto';
+  const contentHeight = Math.max(element.scrollHeight, lineHeight);
+  element.style.height = `${Math.min(contentHeight, maxHeight)}px`;
+  element.style.overflowY = contentHeight > maxHeight + 1 ? 'auto' : 'hidden';
+  element.closest('.task-row')?.classList.toggle('task-row-multiline', contentHeight > lineHeight + 1);
+};
+
+window.addEventListener('resize', () => {
+  document.querySelectorAll('textarea.task-text').forEach(window.resizeTaskText);
+});
+
 const DEFAULT_BACKGROUND_THEME = {
   primary: '#f0efe9',
   secondary: '#e5e5e3',
@@ -115,6 +131,14 @@ function parseDeadlineTime(value, period) {
 
 function localDateKey(date) {
   return `${String(date.getFullYear()).padStart(4, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function formatDeadlineTime(value) {
+  if (!value) return '';
+  const [minutes] = String(value).split(':').slice(1);
+  const options = { hour: 'numeric' };
+  if (minutes && minutes !== '00') options.minute = '2-digit';
+  return new Date(`2000-01-01T${value}:00`).toLocaleTimeString([], options);
 }
 
 function parseDateKey(value) {
@@ -316,7 +340,7 @@ document.addEventListener('alpine:init', () => {
       ? Object.values(tracker.dayTasks).flat().find((item) => item.id === row.dataset.taskId)
       : tracker.sections.flatMap((section) => section.tasks).find((item) => item.id === row.dataset.taskId);
     const subtask = task?.subtasks.find((item) => item.id === row.dataset.subtaskId);
-    if (!task || !subtask) return;
+    if (!task || !subtask || task.subtasks.length <= 1) return;
     event.preventDefault();
     handle.setPointerCapture(event.pointerId);
     pointerDragState = { pointerId: event.pointerId, handle, task, subtask, source, targetRow: row, targetSubtask: subtask };
@@ -616,7 +640,7 @@ document.addEventListener('alpine:init', () => {
 
     formatDayTime(task) {
       if (!task?.deadlineTime) return 'No time';
-      return new Date(`2000-01-01T${task.deadlineTime}:00`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      return formatDeadlineTime(task.deadlineTime);
     },
 
     toggleDayViewDeadlineEditor(entry) {
@@ -786,17 +810,22 @@ document.addEventListener('alpine:init', () => {
     },
 
     formatDeadline(task) {
-      if (!task?.deadlineDate && !task?.deadlineTime) return '▾ No deadline';
+      if (!task?.deadlineDate && !task?.deadlineTime) return 'No deadline';
       const dateText = task.deadlineDate
         ? (task.deadlineDate === localDateKey(new Date())
           ? 'Today'
-          : new Date(`${task.deadlineDate}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }))
+          : (() => {
+            const date = new Date(`${task.deadlineDate}T00:00:00`);
+            const options = { month: 'short', day: 'numeric' };
+            if (date.getFullYear() !== new Date().getFullYear()) options.year = 'numeric';
+            return date.toLocaleDateString(undefined, options);
+          })())
         : '';
-      const timeText = task.deadlineTime ? new Date(`2000-01-01T${task.deadlineTime}:00`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+      const timeText = formatDeadlineTime(task.deadlineTime);
       if (dateText && timeText) return `${dateText} • ${timeText}`;
       if (dateText) return dateText;
       if (timeText) return timeText;
-      return '▾ No deadline';
+      return 'No deadline';
     },
 
     toggleDeadlineEditor(task) {

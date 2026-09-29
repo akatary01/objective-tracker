@@ -60,7 +60,7 @@
 
         <template x-for="section in $store.tracker.sections" :key="section.id">
             <section class="section" x-data="{ get prog() { return $store.tracker.progress(section) } }">
-                <div class="section-header flex align-center">
+                <div class="section-header flex align-center" :class="{ 'section-header-minimized': section.minimized }">
                     <input class="section-title uppercase" x-model="section.title" @input="$store.tracker.save()" placeholder="Section name…" />
                     <button class="icon-btn collapse-btn" x-show="section.tasks.length > 0" @click="$store.tracker.toggleSectionMinimized(section)" :title="section.minimized ? 'Expand section' : 'Minimize section'" :aria-label="section.minimized ? 'Expand section' : 'Minimize section'" :aria-expanded="!section.minimized"></button>
                     <button class="icon-btn danger" @click="$store.tracker.deleteSection(section)">✕</button>
@@ -73,22 +73,25 @@
                     <span class="progress-label" x-text="prog.total === 0 ? 'No tasks' : prog.done + ' / ' + prog.total"></span>
                 </div>
 
-                <ul class="task-list" x-show="!section.minimized">
+                <ul class="task-list" x-show="!section.minimized" x-effect="section.minimized; $nextTick(() => $el.querySelectorAll('textarea.task-text').forEach(window.resizeTaskText))">
                     <template x-for="task in $store.tracker.tasksForSection(section)" :key="task.id">
                         <li
                             class="task"
                             :class="{ 'due-today': $store.tracker.isDueToday(task.deadlineDate), 'overdue-task': $store.tracker.isOverdueTask(task), 'overdue-start': $store.tracker.isFirstOverdueTask(section, task) }"
                         >
-                            <div class="task-row flex align-center">
+                            <div class="task-row flex align-center" :class="{ 'task-row-minimized': task.minimized }">
                                 <input type="checkbox" :checked="$store.tracker.isTaskChecked(task)" @change="$store.tracker.toggleTask(task)" />
-                                <input
+                                <textarea
                                     class="task-text"
                                     placeholder="Task…"
+                                    rows="1"
+                                    wrap="soft"
                                     x-model="task.text"
-                                    @input="$store.tracker.save(); task.text = task.text.charAt(0).toUpperCase() + task.text.slice(1)"
+                                    x-init="$nextTick(() => window.resizeTaskText($el))"
+                                    @input="$store.tracker.save(); task.text = task.text.charAt(0).toUpperCase() + task.text.slice(1); window.resizeTaskText($event.target)"
                                     :class="{ checked: $store.tracker.isTaskChecked(task) }"
                                     @keydown.enter.prevent="$store.tracker.addSubtask(task)"
-                                />
+                                ></textarea>
                                 <div class="task-deadline-wrap">
                                     <button
                                         type="button"
@@ -123,7 +126,7 @@
                                 <button class="icon-btn danger" @click="$store.tracker.deleteTask(section, task)">✕</button>
                             </div>
 
-                            <ul class="subtask-list" x-show="!task.minimized && task.subtasks.length > 0">
+                            <ul class="subtask-list" x-show="!task.minimized && task.subtasks.length > 0" x-effect="task.minimized; $nextTick(() => $el.querySelectorAll('textarea.task-text').forEach(window.resizeTaskText))">
                                 <template x-for="sub in task.subtasks" :key="sub.id">
                                     <li
                                         class="task-row subtask-row flex align-center"
@@ -131,15 +134,18 @@
                                         :data-subtask-id="sub.id"
                                         data-source="section"
                                     >
-                                        <button class="drag-handle" type="button" aria-label="Drag to reorder">⋮⋮</button>
+                                        <button class="drag-handle" type="button" :class="{ 'drag-handle-placeholder': task.subtasks.length <= 1 }" :disabled="task.subtasks.length <= 1" :aria-hidden="task.subtasks.length <= 1" aria-label="Drag to reorder">⋮⋮</button>
                                         <input type="checkbox" :checked="sub.checked" @change="$store.tracker.toggleSubtask(task, sub)" />
-                                        <input
+                                        <textarea
                                             class="task-text subtask-text"
                                             x-model="sub.text"
                                             placeholder="Sub-task…"
-                                            @input="$store.tracker.save(); sub.text = sub.text.charAt(0).toUpperCase() + sub.text.slice(1)"
+                                            rows="1"
+                                            wrap="soft"
+                                            x-init="$nextTick(() => window.resizeTaskText($el))"
+                                            @input="$store.tracker.save(); sub.text = sub.text.charAt(0).toUpperCase() + sub.text.slice(1); window.resizeTaskText($event.target)"
                                             :class="{ checked: sub.checked }"
-                                        />
+                                        ></textarea>
                                         <button class="icon-btn danger" @click="$store.tracker.deleteSubtask(task, sub)">✕</button>
                                     </li>
                                 </template>
@@ -152,7 +158,7 @@
         </template>
     </div>
 
-    <main class="day-view" x-show="$store.tracker.viewMode === 'days'">
+    <main class="day-view" x-show="$store.tracker.viewMode === 'days'" x-effect="$store.tracker.viewMode; $nextTick(() => $el.querySelectorAll('textarea.task-text').forEach(window.resizeTaskText))">
         <div class="day-month-row">
             <label class="day-month-label" for="day-month-year">Month / year</label>
             <input
@@ -190,16 +196,19 @@
         <ul class="task-list day-task-list">
             <template x-for="entry in $store.tracker.dayViewEntries()" :key="entry.key">
                 <li class="task" :class="{ 'overdue-task': $store.tracker.isDayViewEntryOverdue(entry), 'overdue-start': $store.tracker.isFirstOverdueDayEntry(entry) }">
-                    <div class="task-row flex align-center">
+                    <div class="task-row flex align-center" :class="{ 'task-row-minimized': entry.task.minimized }">
                         <input type="checkbox" :checked="$store.tracker.isDayViewTaskChecked(entry)" @change="$store.tracker.toggleDayViewTask(entry)" />
-                        <input
+                        <textarea
                             class="task-text"
                             placeholder="Task…"
+                            rows="1"
+                            wrap="soft"
                             x-model="entry.task.text"
-                            @input="$store.tracker.updateDayViewTaskText(entry)"
+                            x-init="$nextTick(() => window.resizeTaskText($el))"
+                            @input="$store.tracker.updateDayViewTaskText(entry); window.resizeTaskText($event.target)"
                             :class="{ checked: $store.tracker.isDayViewTaskChecked(entry) }"
                             @keydown.enter.prevent="$store.tracker.addDayViewSubtask(entry)"
-                        />
+                        ></textarea>
                         <div class="task-deadline-wrap">
                             <button
                                 type="button"
@@ -231,18 +240,21 @@
                         <button class="icon-btn" @click="$store.tracker.addDayViewSubtask(entry)" aria-label="Add subtask">⤷</button>
                         <button class="icon-btn danger" @click="$store.tracker.deleteDayViewTask(entry)" aria-label="Delete task">✕</button>
                     </div>
-                    <ul class="subtask-list" x-show="!entry.task.minimized && entry.task.subtasks.length > 0">
+                    <ul class="subtask-list" x-show="!entry.task.minimized && entry.task.subtasks.length > 0" x-effect="entry.task.minimized; $nextTick(() => $el.querySelectorAll('textarea.task-text').forEach(window.resizeTaskText))">
                         <template x-for="sub in entry.task.subtasks" :key="sub.id">
                             <li class="task-row subtask-row flex align-center" :data-task-id="entry.task.id" :data-subtask-id="sub.id" :data-source="entry.source">
-                                <button class="drag-handle" type="button" aria-label="Drag to reorder">⋮⋮</button>
+                                <button class="drag-handle" type="button" :class="{ 'drag-handle-placeholder': entry.task.subtasks.length <= 1 }" :disabled="entry.task.subtasks.length <= 1" :aria-hidden="entry.task.subtasks.length <= 1" aria-label="Drag to reorder">⋮⋮</button>
                                 <input type="checkbox" :checked="sub.checked" @change="$store.tracker.toggleDayViewSubtask(entry, sub)" />
-                                <input
+                                <textarea
                                     class="task-text subtask-text"
                                     x-model="sub.text"
                                     placeholder="Sub-task…"
-                                    @input="$store.tracker.updateDayViewSubtaskText(entry, sub)"
+                                    rows="1"
+                                    wrap="soft"
+                                    x-init="$nextTick(() => window.resizeTaskText($el))"
+                                    @input="$store.tracker.updateDayViewSubtaskText(entry, sub); window.resizeTaskText($event.target)"
                                     :class="{ checked: sub.checked }"
-                                />
+                                ></textarea>
                                 <button class="icon-btn danger" @click="$store.tracker.deleteDayViewSubtask(entry, sub)" aria-label="Delete subtask">✕</button>
                             </li>
                         </template>
@@ -259,7 +271,7 @@
                 </template>
             </select>
             <button class="add-btn small day-add-btn" @click="$store.tracker.addFromToolbar()" :aria-disabled="!$store.tracker.canAddDayTask()" :title="$store.tracker.canAddDayTask() ? '' : 'Choose a section before adding a task'">
-                Add a task for <span x-text="$store.tracker.selectedWeekday()"></span>
+                <span aria-hidden="true">+</span> Add a task for <span x-text="$store.tracker.selectedWeekday()"></span>
             </button>
         </div>
     </main>

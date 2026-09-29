@@ -17,7 +17,7 @@ A minimal macOS sticky-note app for tracking objectives with sections, tasks, an
 ✅ Tasks and sub-tasks with checkboxes<br>
 ✅ Deadlines for tasks<br>
 ✅ Drag and drop rearrangeability for subtasks<br> 
-✅ Minimize and collapsability for sections and tasks
+✅ Minimize and collapsability for sections and tasks<br>
 ✅ Themeable background colors via the **Color** menu<br>
 ✅ Persisted state across restarts
 

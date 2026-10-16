@@ -493,30 +493,59 @@
 }
 .drag-handle:active { cursor: grabbing; }
 .task-row:hover .drag-handle { opacity: 1; }
+.section-header .section-drag-handle { opacity: 1; }
 .drag-handle-placeholder { visibility: hidden; pointer-events: none; cursor: default; }
 
-.task.dragging, .subtask-row.dragging { opacity: 0.6; }
+.task.dragging, .subtask-row.dragging, .section.dragging { opacity: 0.6; }
 .subtask-row.dragging, .subtask-row.drag-target { transition: opacity 0.12s ease, background-color 0.12s ease, outline-color 0.12s ease; }
 .subtask-row.drag-target { background: color-mix(in srgb, var(--task-accent) 8%, transparent); }
+.section.dragging, .section.drag-target { transition: opacity 0.12s ease, background-color 0.12s ease; }
+.section.drag-target { background: color-mix(in srgb, var(--accent) 5%, transparent); }
 
 .subtask-list { padding-left: 9px; display: flex; flex-direction: column; gap: 2px; list-style: none; margin: 1px 0 3px 20px; }
 
 .subtask-row { opacity: 0.85; }
 
 input[type='checkbox'] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: inline-grid;
+    place-content: center;
+    margin: 0;
     width: 13px;
     height: 13px;
     min-width: 13px;
     min-height: 13px;
     flex: 0 0 13px;
     box-sizing: border-box;
+    border: 1px solid var(--font-color-secondary);
+    border-radius: 2px;
+    background: #fff;
     cursor: pointer;
-    accent-color: var(--task-accent, var(--plus-color));
+}
+
+input[type='checkbox']:checked {
+    border-color: var(--task-accent, var(--plus-color));
+    background: var(--task-accent, var(--plus-color));
+}
+
+input[type='checkbox']:checked::after {
+    content: '';
+    width: 4px;
+    height: 7px;
+    border: solid var(--bg-primary);
+    border-width: 0 1.5px 1.5px 0;
+    transform: translateY(-1px) rotate(45deg);
+}
+
+input[type='checkbox']:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--task-accent, var(--plus-color)) 55%, transparent);
+    outline-offset: 2px;
 }
 
 .task-row-multiline > input[type='checkbox'] {
     align-self: flex-start;
-    margin-top: 1px;
+    margin-top: 2px;
 }
 
 .task-text {
@@ -547,6 +576,7 @@ input[type='checkbox'] {
     position: relative;
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     margin-left: auto;
     background: transparent;
     border: none;
@@ -580,7 +610,7 @@ input[type='checkbox'] {
     letter-spacing: 0.02em;
     font-family: inherit;
     cursor: pointer;
-    text-align: left;
+    text-align: right;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -588,6 +618,17 @@ input[type='checkbox'] {
 }
 
 .day-task-list .task-deadline-trigger { max-width: 56px; }
+
+.add-subtask-btn svg {
+    display: block;
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
 
 .task-deadline-popover {
     position: absolute;

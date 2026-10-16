@@ -324,13 +324,26 @@ document.addEventListener('alpine:init', () => {
     if (pointerDragState?.handle?.hasPointerCapture(pointerDragState.pointerId)) {
       pointerDragState.handle.releasePointerCapture(pointerDragState.pointerId);
     }
-    document.querySelectorAll('.subtask-row.dragging, .subtask-row.drag-target').forEach((row) => {
+    document.querySelectorAll('.subtask-row.dragging, .subtask-row.drag-target, .section.dragging, .section.drag-target').forEach((row) => {
       row.classList.remove('dragging', 'drag-target');
     });
     pointerDragState = null;
   }
 
   document.addEventListener('pointerdown', (event) => {
+    const sectionHandle = event.target.closest('.section-drag-handle');
+    const section = sectionHandle?.closest('.section');
+    if (section && !sectionHandle.disabled) {
+      const tracker = Alpine.store('tracker');
+      const draggedSection = tracker.sections.find((item) => item.id === section.dataset.sectionId);
+      if (!draggedSection || tracker.sections.length <= 1) return;
+      event.preventDefault();
+      sectionHandle.setPointerCapture(event.pointerId);
+      pointerDragState = { pointerId: event.pointerId, handle: sectionHandle, type: 'section', section: draggedSection, targetRow: section, targetSection: draggedSection };
+      section.classList.add('dragging');
+      return;
+    }
+
     const handle = event.target.closest('.drag-handle');
     const row = handle?.closest('.subtask-row');
     if (!row) return;
@@ -349,6 +362,20 @@ document.addEventListener('alpine:init', () => {
 
   document.addEventListener('pointermove', (event) => {
     if (!pointerDragState || event.pointerId !== pointerDragState.pointerId) return;
+    if (pointerDragState.type === 'section') {
+      const row = document.elementFromPoint(event.clientX, event.clientY)?.closest('.section');
+      if (!row) return;
+      const targetSection = Alpine.store('tracker').sections.find((item) => item.id === row.dataset.sectionId);
+      if (!targetSection) return;
+      if (pointerDragState.targetRow !== row) {
+        pointerDragState.targetRow?.classList.remove('drag-target');
+        row.classList.add('drag-target');
+        pointerDragState.targetRow = row;
+        pointerDragState.targetSection = targetSection;
+      }
+      return;
+    }
+
     const row = document.elementFromPoint(event.clientX, event.clientY)?.closest('.subtask-row');
     if (!row || row.dataset.taskId !== pointerDragState.task.id || (row.dataset.source || 'section') !== pointerDragState.source) return;
     const targetSubtask = pointerDragState.task.subtasks.find((item) => item.id === row.dataset.subtaskId);
@@ -363,6 +390,17 @@ document.addEventListener('alpine:init', () => {
 
   document.addEventListener('pointerup', (event) => {
     if (!pointerDragState || event.pointerId !== pointerDragState.pointerId) return;
+    if (pointerDragState.type === 'section') {
+      const { section, targetSection } = pointerDragState;
+      if (section !== targetSection) {
+        const tracker = Alpine.store('tracker');
+        tracker.startDrag(section, tracker.sections, 'section');
+        tracker.moveSection(targetSection);
+      }
+      clearPointerDrag();
+      return;
+    }
+
     const { task, subtask, targetSubtask, source } = pointerDragState;
     if (subtask !== targetSubtask) {
       const tracker = Alpine.store('tracker');
@@ -830,7 +868,13 @@ document.addEventListener('alpine:init', () => {
 
     toggleDeadlineEditor(task) {
       if (!task) return;
-      if (!task.deadlineEditorOpen) populateDeadlineEditor(task);
+      if (!task.deadlineEditorOpen) {
+        populateDeadlineEditor(task);
+        if (!task.deadlineDate) {
+          const [year, month, day] = localDateKey(new Date()).split('-');
+          task.deadlineDateInput = `${month}/${day}/${year}`;
+        }
+      }
       task.deadlineEditorOpen = !task.deadlineEditorOpen;
     },
 
@@ -896,6 +940,21 @@ document.addEventListener('alpine:init', () => {
 
     moveDaySubtask(task, targetSubtask) {
       this.reorderSubtask(task, targetSubtask, () => this.saveDayTasks());
+    },
+
+    moveSection(targetSection) {
+      if (!this.dragState || this.dragState.type !== 'section') return;
+      const sections = this.sections;
+      const fromIndex = sections.indexOf(this.dragState.item);
+      const toIndex = sections.indexOf(targetSection);
+      if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
+        this.dragState = null;
+        return;
+      }
+      sections.splice(fromIndex, 1);
+      sections.splice(toIndex, 0, this.dragState.item);
+      this.dragState = null;
+      this.save();
     },
 
     reorderSubtask(task, targetSubtask, persist) {

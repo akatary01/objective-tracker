@@ -59,8 +59,9 @@
         </section>
 
         <template x-for="section in $store.tracker.sections" :key="section.id">
-            <section class="section" x-data="{ get prog() { return $store.tracker.progress(section) } }">
+            <section class="section" :data-section-id="section.id" x-data="{ get prog() { return $store.tracker.progress(section) } }">
                 <div class="section-header flex align-center" :class="{ 'section-header-minimized': section.minimized }">
+                    <button class="drag-handle section-drag-handle" type="button" :disabled="$store.tracker.sections.length <= 1" :aria-hidden="$store.tracker.sections.length <= 1" aria-label="Drag to reorder section">⋮⋮</button>
                     <input class="section-title uppercase" x-model="section.title" @input="$store.tracker.save()" placeholder="Section name…" />
                     <button class="icon-btn collapse-btn" x-show="section.tasks.length > 0" @click="$store.tracker.toggleSectionMinimized(section)" :title="section.minimized ? 'Expand section' : 'Minimize section'" :aria-label="section.minimized ? 'Expand section' : 'Minimize section'" :aria-expanded="!section.minimized"></button>
                     <button class="icon-btn danger" @click="$store.tracker.deleteSection(section)">✕</button>
@@ -108,21 +109,23 @@
                                     >
                                         <div class="task-deadline-grid">
                                             <input class="task-deadline-field deadline-date-input" x-model="task.deadlineDateInput" @keydown.enter.prevent="$store.tracker.saveDeadline(task)" placeholder="MM/DD/YYYY" maxlength="10" inputmode="numeric" aria-label="Deadline date" />
-                                            <input class="task-deadline-field" x-model="task.deadlineTimeInput" @keydown.enter.prevent="$store.tracker.saveDeadline(task)" placeholder="h:mm" maxlength="5" inputmode="numeric" aria-label="Deadline time" />
-                                            <div class="deadline-period-toggle" role="group" aria-label="AM or PM">
-                                                <button type="button" :class="{ active: task.deadlinePeriod === 'AM' }" @click="task.deadlinePeriod = 'AM'">AM</button>
-                                                <button type="button" :class="{ active: task.deadlinePeriod === 'PM' }" @click="task.deadlinePeriod = 'PM'">PM</button>
-                                            </div>
+                                        <input class="task-deadline-field" x-model="task.deadlineTimeInput" @keydown.enter.prevent="$store.tracker.saveDeadline(task)" placeholder="h:mm" maxlength="5" inputmode="numeric" aria-label="Deadline time" />
+                                        <div class="deadline-period-toggle" role="group" aria-label="AM or PM">
+                                            <button type="button" :class="{ active: task.deadlinePeriod === 'AM' }" @click="task.deadlinePeriod = 'AM'">AM</button>
+                                            <button type="button" :class="{ active: task.deadlinePeriod === 'PM' }" @click="task.deadlinePeriod = 'PM'">PM</button>
+                                        </div>
                                         </div>
                                         <p class="task-deadline-error" x-show="task.deadlineError" x-text="task.deadlineError"></p>
                                         <div class="task-deadline-actions">
-                                            <button type="button" class="task-deadline-clear" @click="$store.tracker.clearDeadline(task)">Clear</button>
-                                            <button type="button" class="task-deadline-save" @click="$store.tracker.saveDeadline(task)">Save</button>
+                                        <button type="button" class="task-deadline-clear" @click="$store.tracker.clearDeadline(task)">Clear</button>
+                                        <button type="button" class="task-deadline-save" @click="$store.tracker.saveDeadline(task)">Save</button>
                                         </div>
                                     </div>
                                 </div>
-                                <button class="icon-btn collapse-btn" :class="{ 'collapse-btn-placeholder': task.subtasks.length === 0 }" :disabled="task.subtasks.length === 0" :aria-hidden="task.subtasks.length === 0" @click="$store.tracker.toggleTaskMinimized(task)" :title="task.minimized ? 'Expand task' : 'Minimize task'" :aria-label="task.minimized ? 'Expand task' : 'Minimize task'" :aria-expanded="!task.minimized"></button>
-                                <button class="icon-btn" @click="$store.tracker.addSubtask(task)">⤷</button>
+                                <button class="icon-btn collapse-btn" :class="{ 'collapse-btn-placeholder': task.subtasks.length === 0 }" :disabled="task.subtasks.length === 0" :aria-hidden="task.subtasks.length === 0" @click="$store.tracker.toggleTaskMinimized(task)" :aria-label="task.minimized ? 'Expand task' : 'Minimize task'" :aria-expanded="!task.minimized"></button>
+                                <button class="icon-btn add-subtask-btn" @click="$store.tracker.addSubtask(task)" aria-label="Add subtask">
+                                    <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2 1.5v3A3.5 3.5 0 0 0 5.5 8H10M7.5 5.5 10 8l-2.5 2.5" /></svg>
+                                </button>
                                 <button class="icon-btn danger" @click="$store.tracker.deleteTask(section, task)">✕</button>
                             </div>
 
@@ -236,8 +239,10 @@
                                 </div>
                             </div>
                         </div>
-                        <button class="icon-btn collapse-btn" :class="{ 'collapse-btn-placeholder': entry.task.subtasks.length === 0 }" :disabled="entry.task.subtasks.length === 0" :aria-hidden="entry.task.subtasks.length === 0" @click="$store.tracker.toggleDayViewTaskMinimized(entry)" :title="entry.task.minimized ? 'Expand task' : 'Minimize task'" :aria-label="entry.task.minimized ? 'Expand task' : 'Minimize task'" :aria-expanded="!entry.task.minimized"></button>
-                        <button class="icon-btn" @click="$store.tracker.addDayViewSubtask(entry)" aria-label="Add subtask">⤷</button>
+                        <button class="icon-btn collapse-btn" :class="{ 'collapse-btn-placeholder': entry.task.subtasks.length === 0 }" :disabled="entry.task.subtasks.length === 0" :aria-hidden="entry.task.subtasks.length === 0" @click="$store.tracker.toggleDayViewTaskMinimized(entry)" :aria-label="entry.task.minimized ? 'Expand task' : 'Minimize task'" :aria-expanded="!entry.task.minimized"></button>
+                        <button class="icon-btn add-subtask-btn" @click="$store.tracker.addDayViewSubtask(entry)" aria-label="Add subtask">
+                            <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2 1.5v3A3.5 3.5 0 0 0 5.5 8H10M7.5 5.5 10 8l-2.5 2.5" /></svg>
+                        </button>
                         <button class="icon-btn danger" @click="$store.tracker.deleteDayViewTask(entry)" aria-label="Delete task">✕</button>
                     </div>
                     <ul class="subtask-list" x-show="!entry.task.minimized && entry.task.subtasks.length > 0" x-effect="entry.task.minimized; $nextTick(() => $el.querySelectorAll('textarea.task-text').forEach(window.resizeTaskText))">

@@ -42,13 +42,17 @@
         </div>
 
         <div class="window-controls" aria-label="Window controls">
-            <button class="window-control minimize" @click="window.objectiveTracker?.minimizeWindow?.()" title="Minimize window" aria-label="Minimize window">—</button>
+            <button class="window-control minimize" @click="window.objectiveTracker?.minimizeWindow?.()" title="Minimize window" aria-label="Minimize window">
+                —
+            </button>
             <button class="window-control maximize" @click="window.objectiveTracker?.toggleFullScreen?.()" title="Toggle full screen" aria-label="Toggle full screen">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <rect x="4" y="4" width="16" height="16" rx="1" />
                 </svg>
             </button>
-            <button class="window-control close" @click="window.objectiveTracker?.closeWindow?.()" title="Close window" aria-label="Close window">✕</button>
+            <button class="window-control close" @click="window.objectiveTracker?.closeWindow?.()" title="Close window" aria-label="Close window">
+                ✕
+            </button>
         </div>
     </nav>
 
@@ -269,12 +273,16 @@
         </ul>
         <p class="day-empty" x-show="$store.tracker.dayViewEntries().length === 0">No tasks for this day.</p>
         <div class="day-add-controls">
-            <select id="day-section-select" class="day-section-select" x-model="$store.tracker.newDayTaskSectionId" aria-label="Section for new task (required)" required>
-                <option value="" disabled>Choose section…</option>
-                <template x-for="section in $store.tracker.sections" :key="section.id">
-                    <option :value="section.id" x-text="section.title ? section.title.charAt(0).toUpperCase() + section.title.slice(1) : 'Untitled section'"></option>
-                </template>
-            </select>
+            <div class="day-section-picker" x-data="{ sectionMenuOpen: false }" @click.outside="sectionMenuOpen = false" @keydown.escape.stop.prevent="sectionMenuOpen = false; $refs.sectionTrigger.focus()">
+                <button id="day-section-select" class="day-section-select" type="button" role="combobox" aria-label="Section for new task (required)" aria-controls="day-section-options" aria-haspopup="listbox" :aria-expanded="sectionMenuOpen" x-ref="sectionTrigger" @click="$el.classList.remove('day-section-select-guided'); sectionMenuOpen = !sectionMenuOpen" @blur="$el.classList.remove('day-section-select-guided')" @keydown.arrow-down.prevent="$el.classList.remove('day-section-select-guided'); sectionMenuOpen = true; $nextTick(() => $refs.sectionOptions.querySelector('button')?.focus())">
+                    <span x-text="$store.tracker.sections.find(section => section.id === $store.tracker.newDayTaskSectionId)?.title || 'Choose section…'"></span>
+                </button>
+                <div id="day-section-options" class="day-section-options" role="listbox" aria-label="Sections" x-ref="sectionOptions" x-show="sectionMenuOpen">
+                    <template x-for="section in $store.tracker.sections" :key="section.id">
+                        <button class="day-section-option" type="button" role="option" :aria-selected="$store.tracker.newDayTaskSectionId === section.id" x-text="section.title ? section.title.charAt(0).toUpperCase() + section.title.slice(1) : 'Untitled section'" @click="$store.tracker.newDayTaskSectionId = section.id; sectionMenuOpen = false; $refs.sectionTrigger.focus()" @keydown.arrow-down.prevent="$el.nextElementSibling?.focus()" @keydown.arrow-up.prevent="($el.previousElementSibling || $refs.sectionTrigger).focus()"></button>
+                    </template>
+                </div>
+            </div>
             <button class="add-btn small day-add-btn" @click="$store.tracker.addFromToolbar()" :aria-disabled="!$store.tracker.canAddDayTask()" :title="$store.tracker.canAddDayTask() ? '' : 'Choose a section before adding a task'">
                 <span aria-hidden="true">+</span> Add a task for <span x-text="$store.tracker.selectedWeekday()"></span>
             </button>

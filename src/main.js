@@ -282,17 +282,34 @@ document.addEventListener('alpine:init', () => {
     tooltip.classList.remove('visible');
   }
 
-  document.addEventListener('mouseover', (event) => {
-    const element = event.target.closest('.task-text, .subtask-text, .new-section-btn, .theme-btn, .view-mode-btn, .day-add-btn');
+  function showTargetTooltip(event) {
+    const element = event.target.closest('[title], .task-text, .subtask-text');
     if (!element) return;
     const isTaskInput = element.matches('.task-text, .subtask-text');
     if (isTaskInput && !isTextClipped(element)) return;
     const text = isTaskInput ? element.value : element.getAttribute('title');
     if (!text) return;
     element.dataset.tooltip = text;
-    element.removeAttribute('title');
+    if (element.hasAttribute('title')) {
+      element.dataset.tooltipFromTitle = 'true';
+      element.removeAttribute('title');
+    }
     showTooltipForElement(element, text);
-  });
+  }
+
+  function hideTargetTooltip(event) {
+    const element = event.target.closest('[data-tooltip]');
+    if (!element) return;
+    const next = event.relatedTarget;
+    if (next && element.contains(next)) return;
+    hideTooltipForElement();
+    if (element.dataset.tooltipFromTitle === 'true') element.setAttribute('title', element.dataset.tooltip);
+    delete element.dataset.tooltip;
+    delete element.dataset.tooltipFromTitle;
+  }
+
+  document.addEventListener('mouseover', showTargetTooltip);
+  document.addEventListener('focusin', showTargetTooltip);
 
   document.addEventListener('mousemove', (event) => {
     const element = event.target.closest('[data-tooltip]');
@@ -306,16 +323,16 @@ document.addEventListener('alpine:init', () => {
     showTooltipForElement(element, text);
   });
 
-  document.addEventListener('mouseout', (event) => {
-    const element = event.target.closest('[data-tooltip]');
-    if (!element) return;
-    const next = event.relatedTarget;
-    if (next && element.contains(next)) return;
+  document.addEventListener('mouseout', hideTargetTooltip);
+  document.addEventListener('focusout', hideTargetTooltip);
+  document.addEventListener('focusin', (event) => {
+    if (event.target.matches('[data-tooltip]')) return;
+    const tooltipElement = document.querySelector('[data-tooltip]');
+    if (!tooltipElement) return;
     hideTooltipForElement();
-    if (element.matches('.new-section-btn, .theme-btn, .view-mode-btn, .day-add-btn')) {
-      element.setAttribute('title', element.dataset.tooltip);
-    }
-    delete element.dataset.tooltip;
+    if (tooltipElement.dataset.tooltipFromTitle === 'true') tooltipElement.setAttribute('title', tooltipElement.dataset.tooltip);
+    delete tooltipElement.dataset.tooltip;
+    delete tooltipElement.dataset.tooltipFromTitle;
   });
 
   let pointerDragState = null;
@@ -649,7 +666,9 @@ document.addEventListener('alpine:init', () => {
         return;
       }
       if (!this.canAddDayTask()) {
-        document.querySelector('.day-section-select')?.focus();
+        const sectionSelect = document.querySelector('.day-section-select');
+        sectionSelect?.focus();
+        sectionSelect?.classList.add('day-section-select-guided');
         return;
       }
       this.addDayTask();
